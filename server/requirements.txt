@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+websockets
+sqlalchemy
+aiosqlite
+rich
+pydantic
+pydantic-settings
+python-dotenv
