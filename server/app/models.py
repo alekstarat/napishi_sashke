@@ -1,6 +1,6 @@
 from sqlalchemy import String, Boolean, ForeignKey, Text
 from datetime import datetime
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .database import Base
 
@@ -43,3 +43,11 @@ class Message(Base):
     timestamp: Mapped[datetime]
 
     delivered: Mapped[bool]
+
+    sender: Mapped["User"] = relationship(
+        foreign_keys=[sender_id]
+    )
+
+    recipient: Mapped["User"] = relationship(
+        foreign_keys=[recipient_id]
+    )

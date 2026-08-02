@@ -14,10 +14,11 @@ class HistoryMessage(BaseModel):
     timestamp: int
 
 class HistoryPayload(BaseModel):
+    companion: str
     messages: list[HistoryMessage]
 
-class HistoryEvent(BaseModel):
-    event: str = "history"
+class HistoryResponse(BaseModel):
+    type: Literal["history"] = "history"
     payload: HistoryPayload
 
 class SendMessagePayload(BaseModel):
@@ -57,6 +58,7 @@ ServerPacket = Annotated[
     | ErrorResponse
     | PongResponse
     | ReceiveMessageEvent
-    | SendMessageResponse,
+    | SendMessageResponse
+    | HistoryResponse,
     Field(discriminator="type"),
 ]

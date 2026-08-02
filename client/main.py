@@ -2,6 +2,7 @@ import asyncio
 
 from client import MessengerClient
 from handlers.dispatcher import PacketDispatcher
+from handlers.history import HistoryHandler
 
 from handlers.message import MessageHandler
 from handlers.error import ErrorHandler
@@ -27,6 +28,7 @@ async def main():
     dispatcher.register(ErrorHandler())
     dispatcher.register(AuthHandler())
     dispatcher.register(SendOkHandler())
+    dispatcher.register(HistoryHandler())
 
     client = MessengerClient(
         url=SERVER_URL,

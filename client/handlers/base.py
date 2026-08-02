@@ -3,7 +3,6 @@ from dataclasses import dataclass
 from typing import Generic, TypeVar
 
 from websockets.asyncio.client import ClientConnection
-
 from ui.console import ConsoleUI
 
 
@@ -14,6 +13,7 @@ T = TypeVar("T")
 class PacketContext:
     websocket: ClientConnection
     ui: ConsoleUI
+    client: "MessengerClient | None" = None
 
 
 class PacketHandler(Generic[T], ABC):

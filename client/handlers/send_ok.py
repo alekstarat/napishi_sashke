@@ -11,7 +11,10 @@ class SendOkHandler(PacketHandler[SendMessageResponse]):
         ctx: PacketContext,
         packet: SendMessageResponse,
     ) -> None:
-
-        ctx.ui.success(
-            f"Message sent"
-        )
+        client = ctx.client
+        if client._last_outgoing:
+            to, text = client._last_outgoing
+            client._last_outgoing = None
+            ctx.ui.own_message(to=to, text=text)
+        else:
+            ctx.ui.success(f"Message sent")

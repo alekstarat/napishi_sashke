@@ -12,7 +12,7 @@ class ConsoleInput:
         prompt: str = "> ",
     ) -> str:
 
-        with patch_stdout():
-            return await self._session.prompt_async(
-                prompt,
-            )
+
+        return await self._session.prompt_async(
+            prompt,
+        )

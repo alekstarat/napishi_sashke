@@ -58,6 +58,31 @@ class ReceiveMessageEvent(BaseModel):
     type: Literal["message"] = "message"
     payload: ReceiveMessagePayload
 
+# =====================
+# History
+# =====================
+
+class GetHistoryPayload(BaseModel):
+    username: str
+
+class GetHistoryRequest(BaseModel):
+    type: Literal["get_history"] = "get_history"
+    payload: GetHistoryPayload
+
+class HistoryMessage(BaseModel):
+    id: str
+    sender: str
+    recipient: str
+    text: str
+    timestamp: int
+
+class HistoryPayload(BaseModel):
+    companion: str          # с кем диалог
+    messages: list[HistoryMessage]
+
+class HistoryResponse(BaseModel):
+    type: Literal["history"] = "history"
+    payload: HistoryPayload
 
 # =====================
 # Errors

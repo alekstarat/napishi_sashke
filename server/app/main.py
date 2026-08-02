@@ -13,8 +13,6 @@ from app.database import engine
 from app.handlers.base import PacketContext
 from app.models import Base
 from app.protocol import parser
-from app.protocol.client import GetHistoryEvent
-from app.protocol.server import HistoryEvent, HistoryPayload, HistoryMessage
 
 
 @asynccontextmanager

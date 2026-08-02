@@ -150,8 +150,8 @@ class MessageService:
             result = await session.execute(
                 select(Message)
                 .options(
-                    selectinload(Message.sender_id),
-                    selectinload(Message.recipient_id),
+                    selectinload(Message.sender),
+                    selectinload(Message.recipient),
                 )
                 .where(
                     or_(

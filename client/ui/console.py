@@ -1,5 +1,7 @@
+import sys
 from datetime import datetime
-
+from prompt_toolkit import print_formatted_text
+from prompt_toolkit.formatted_text import HTML
 from rich.console import Console
 from rich.panel import Panel
 from rich.text import Text
@@ -8,9 +10,12 @@ from rich.text import Text
 class ConsoleUI:
     def __init__(self) -> None:
         self.console = Console(
+            file=sys.stdout,
             force_terminal=True,
-            color_system="standard",
-            markup=True
+            color_system="truecolor",
+            markup=True,
+            highlight=False,
+            emoji=False
         )
 
     def banner(self) -> None:
@@ -59,33 +64,27 @@ class ConsoleUI:
             f"[bold red]✗ {message}[/bold red]"
         )
 
-    def message(
-            self,
-            sender: str,
-            text: str,
-            timestamp: int,
-    ) -> None:
-        time = datetime.fromtimestamp(
-            timestamp
-        ).strftime("%H:%M")
+    def message(self, sender: str, text: str, timestamp: int) -> None:
+        t = datetime.fromtimestamp(timestamp).strftime("%H:%M")
+        print_formatted_text(HTML(
+            f"<ansiblue>{t}</ansiblue>  <b>{sender}</b>\n"
+            f"         {text}\n"
+        ))
 
-        self.console.print(
-            f"[blue]{time}[/blue] "
-            f"[bold]{sender}[/bold]"
-        )
+    def own_message(self, to: str, text: str) -> None:
+        t = datetime.now().strftime("%H:%M")
+        print_formatted_text(HTML(
+            f"<ansigreen>{t}</ansigreen>  <b>you</b> → {to}\n"
+            f"         {text}\n"
+        ))
 
-        self.console.print()
 
-        self.console.print(
-            f"  {text}"
-        )
-
-        self.console.print()
 
     def system(
         self,
         message: str,
     ) -> None:
+        self.console.print("\n")
         self.console.print(
             Panel(
                 message,

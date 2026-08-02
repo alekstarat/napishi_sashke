@@ -29,12 +29,12 @@ class PingRequest(BaseModel):
 class GetHistoryPayload(BaseModel):
     username: str
 
-class GetHistoryEvent(BaseModel):
-    event: str = "get_history"
+class GetHistoryRequest(BaseModel):
+    type: Literal["get_history"] = "get_history"
     payload: GetHistoryPayload
 
 
 ClientPacket = Annotated[
-    AuthRequest | SendMessageRequest | PingRequest,
+    AuthRequest | SendMessageRequest | PingRequest | GetHistoryRequest,
     Field(discriminator="type"),
 ]

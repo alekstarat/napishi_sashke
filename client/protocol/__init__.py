@@ -15,6 +15,8 @@ from .models import (
     ErrorResponse,
 
     PongResponse,
+
+    HistoryResponse
 )
 
 
@@ -35,4 +37,6 @@ __all__ = [
     "ErrorResponse",
 
     "PongResponse",
+
+    "HistoryResponse"
 ]

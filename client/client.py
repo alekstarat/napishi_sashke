@@ -8,7 +8,9 @@ from handlers.base import PacketContext
 from handlers.dispatcher import PacketDispatcher
 from protocol import (
     AuthRequest,
+    SendMessageRequest
 )
+from prompt_toolkit.patch_stdout import patch_stdout
 from protocol.parser import parse_packet
 from ui.console import ConsoleUI
 from ui.input import ConsoleInput
@@ -34,6 +36,8 @@ class MessengerClient:
         self.input = ConsoleInput()
 
         self.websocket: ClientConnection | None = None
+
+        self._last_outgoing: tuple[str, str] | None = None
 
 
     async def connect(self) -> None:
@@ -80,6 +84,7 @@ class MessengerClient:
         ctx = PacketContext(
             websocket=self.websocket,
             ui=self.ui,
+            client=self
         )
 
         while True:
@@ -97,33 +102,27 @@ class MessengerClient:
                 packet,
             )
 
-    async def sender(
-            self,
-    ) -> None:
-
+    async def sender(self) -> None:
         while True:
-
-            command = await self.input.read(
-                self.ui.prompt()
-            )
-
+            command = await self.input.read(self.ui.prompt())
             if not command:
                 continue
 
-            try:
-                packet = parse_command(
-                    command,
-                )
+            print("\033[1A\033[2K", end="", flush=True)
 
+            try:
+                packet = parse_command(command)
             except CommandError as exc:
-                self.ui.error(
-                    str(exc),
-                )
+                self.ui.error(str(exc))
                 continue
 
-            await self.send(
-                packet,
-            )
+            if isinstance(packet, SendMessageRequest):
+                self._last_outgoing = (
+                    packet.payload.to,
+                    packet.payload.text,
+                )
+
+            await self.send(packet)
 
 
     async def run(self) -> None:
@@ -133,8 +132,8 @@ class MessengerClient:
         await self.connect()
 
         await self.authenticate()
-
-        await asyncio.gather(
-            self.receiver(),
-            self.sender(),
-        )
+        with patch_stdout(raw=True):
+            await asyncio.gather(
+                self.receiver(),
+                self.sender(),
+            )
