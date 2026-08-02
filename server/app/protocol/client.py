@@ -26,6 +26,13 @@ class PingRequest(BaseModel):
     type: Literal["ping"] = "ping"
     payload: dict = {}
 
+class GetHistoryPayload(BaseModel):
+    username: str
+
+class GetHistoryEvent(BaseModel):
+    event: str = "get_history"
+    payload: GetHistoryPayload
+
 
 ClientPacket = Annotated[
     AuthRequest | SendMessageRequest | PingRequest,

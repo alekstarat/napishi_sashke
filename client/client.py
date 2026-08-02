@@ -12,7 +12,10 @@ from protocol import (
 from protocol.parser import parse_packet
 from ui.console import ConsoleUI
 from ui.input import ConsoleInput
-
+from commands import (
+    CommandError,
+    parse_command
+)
 
 class MessengerClient:
 
@@ -94,8 +97,9 @@ class MessengerClient:
                 packet,
             )
 
-
-    async def sender(self) -> None:
+    async def sender(
+            self,
+    ) -> None:
 
         while True:
 
@@ -106,47 +110,20 @@ class MessengerClient:
             if not command:
                 continue
 
-            await self.handle_command(
-                command
+            try:
+                packet = parse_command(
+                    command,
+                )
+
+            except CommandError as exc:
+                self.ui.error(
+                    str(exc),
+                )
+                continue
+
+            await self.send(
+                packet,
             )
-
-
-    async def handle_command(
-        self,
-        command: str,
-    ) -> None:
-
-        from commands import parse_command
-
-        result = parse_command(
-            command
-        )
-
-        if result is None:
-
-            self.ui.error(
-                "Unknown command"
-            )
-
-            return
-
-
-        from protocol import (
-            SendMessageRequest,
-        )
-
-
-        packet = SendMessageRequest(
-            payload={
-                "to": result.recipient,
-                "text": result.text,
-            }
-        )
-
-
-        await self.send(
-            packet
-        )
 
 
     async def run(self) -> None:

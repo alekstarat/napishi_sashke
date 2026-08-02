@@ -4,8 +4,6 @@ from pydantic import ValidationError
 from app.handlers.base import PacketContext
 from app.protocol import parser
 from app.protocol.client import AuthRequest
-from app.protocol.server import AuthResponse
-from app.protocol.sender import sender
 from app.services.connection import ConnectionService
 
 from .exceptions import InvalidPacket
@@ -40,14 +38,9 @@ class WebSocketAuthenticator:
             packet.payload.token,
         )
 
-        await self._connections.connect(
+        await self._connections.register(
             user.username,
-            websocket,
-        )
-
-        await sender.send(
-            websocket,
-            AuthResponse(),
+            websocket
         )
 
         return PacketContext(

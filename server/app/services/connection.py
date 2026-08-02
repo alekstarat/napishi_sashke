@@ -1,5 +1,6 @@
 from fastapi import WebSocket
 
+from app.protocol import AuthResponse
 from app.protocol.server import ServerPacket
 from app.protocol.sender import sender
 
@@ -52,3 +53,18 @@ class ConnectionService:
 
     def count(self) -> int:
         return len(self._connections)
+
+    async def register(
+            self,
+            username: str,
+            websocket: WebSocket
+    ) -> None:
+        await self.connect(
+            username,
+            websocket
+        )
+
+        await sender.send(
+            websocket,
+            AuthResponse()
+        )

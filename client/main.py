@@ -6,7 +6,7 @@ from handlers.dispatcher import PacketDispatcher
 from handlers.message import MessageHandler
 from handlers.error import ErrorHandler
 from handlers.auth import AuthHandler
-
+from handlers.send_ok import SendOkHandler
 from config import (
     SERVER_URL,
 )
@@ -23,19 +23,10 @@ async def main():
         handlers={}
     )
 
-
-    dispatcher.register(
-        MessageHandler()
-    )
-
-    dispatcher.register(
-        ErrorHandler()
-    )
-
-    dispatcher.register(
-        AuthHandler()
-    )
-
+    dispatcher.register(MessageHandler())
+    dispatcher.register(ErrorHandler())
+    dispatcher.register(AuthHandler())
+    dispatcher.register(SendOkHandler())
 
     client = MessengerClient(
         url=SERVER_URL,

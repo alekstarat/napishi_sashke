@@ -6,6 +6,20 @@ from pydantic import BaseModel, Field
 class AuthResponse(BaseModel):
     type: Literal["auth_ok"] = "auth_ok"
 
+class HistoryMessage(BaseModel):
+    id: str
+    sender: str
+    recipient: str
+    text: str
+    timestamp: int
+
+class HistoryPayload(BaseModel):
+    messages: list[HistoryMessage]
+
+class HistoryEvent(BaseModel):
+    event: str = "history"
+    payload: HistoryPayload
+
 class SendMessagePayload(BaseModel):
     id: str
 

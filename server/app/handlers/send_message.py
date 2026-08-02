@@ -3,7 +3,7 @@ from app.protocol.client import SendMessageRequest
 from app.services.message import MessageService
 from app.protocol.server import (
     SendMessageResponse,
-    SendMessagePayload,
+    SendMessagePayload, HistoryEvent, HistoryPayload, HistoryMessage,
 )
 from app.protocol.sender import sender
 
@@ -29,6 +29,28 @@ class SendMessageHandler(
             recipient=packet.payload.to,
             text=packet.payload.text,
         )
+
+        # history = await self._message_service.get_history(
+        #     ctx.user,
+        #     packet.payload.to,
+        # )
+        #
+        # await sender.send(
+        #     HistoryEvent(
+        #         payload=HistoryPayload(
+        #             messages=[
+        #                 HistoryMessage(
+        #                     id=message.uuid,
+        #                     sender=message.sender.username,
+        #                     recipient=message.recipient.username,
+        #                     text=message.text,
+        #                     timestamp=int(message.timestamp.timestamp())
+        #                 )
+        #                 for message in history
+        #             ]
+        #         )
+        #     ).model_dump()
+        # )
 
         await sender.send(
             ctx.websocket,

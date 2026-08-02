@@ -1,20 +1,20 @@
-from dataclasses import dataclass
+from protocol import SendMessagePayload, SendMessageRequest
 
 
-@dataclass(slots=True)
-class SendCommand:
-    recipient: str
-    text: str
+class CommandError(Exception):
+    pass
 
 
 def parse_command(
     command: str,
-) -> SendCommand | None:
+) -> SendMessageRequest:
 
     command = command.strip()
 
     if not command.startswith("/msg "):
-        return None
+        raise CommandError(
+            "Unknown command"
+        )
 
     parts = command.split(
         " ",
@@ -22,9 +22,13 @@ def parse_command(
     )
 
     if len(parts) != 3:
-        return None
+        raise CommandError(
+            "Usage: /msg <user> <text>"
+        )
 
-    return SendCommand(
-        recipient=parts[1],
-        text=parts[2],
+    return SendMessageRequest(
+        payload=SendMessagePayload(
+            to=parts[1],
+            text=parts[2],
+        )
     )
