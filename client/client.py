@@ -11,12 +11,14 @@ from protocol import (
     SendMessageRequest
 )
 from prompt_toolkit.patch_stdout import patch_stdout
+
+from protocol.models import GetHistoryRequest, GetHistoryPayload
 from protocol.parser import parse_packet
 from ui.console import ConsoleUI
 from ui.input import ConsoleInput
 from commands import (
     CommandError,
-    parse_command
+    parse_line
 )
 
 class MessengerClient:
@@ -32,12 +34,16 @@ class MessengerClient:
         self.token = token
         self.dispatcher = dispatcher
 
+        self.me = "ты"
+
         self.ui = ConsoleUI()
         self.input = ConsoleInput()
 
         self.websocket: ClientConnection | None = None
 
         self._last_outgoing: tuple[str, str] | None = None
+        self.companion: str | None = None
+        self._authenticated = asyncio.Event()
 
 
     async def connect(self) -> None:
@@ -102,18 +108,37 @@ class MessengerClient:
                 packet,
             )
 
+    def _line_to_packet(self, line: str):
+        result = parse_line(line, self.companion)
+
+        if isinstance(result, tuple) and result[0] == "switch":
+            self.companion = result[1]
+            self.ui.system(f"Чат с {self.companion}")
+            return GetHistoryRequest(
+                payload=GetHistoryPayload(username=self.companion)
+            )
+
+        return result
+
     async def sender(self) -> None:
+        await self._authenticated.wait()
+        await self._pick_companion()
+
         while True:
-            command = await self.input.read(self.ui.prompt())
-            if not command:
+            prompt = f"{self.companion} > " if self.companion else "you >"
+            line = await self.input.read(prompt)
+            if not line:
                 continue
 
             print("\033[1A\033[2K", end="", flush=True)
 
             try:
-                packet = parse_command(command)
+                packet = self._line_to_packet(line)
             except CommandError as exc:
                 self.ui.error(str(exc))
+                continue
+
+            if packet is None:
                 continue
 
             if isinstance(packet, SendMessageRequest):
@@ -124,14 +149,35 @@ class MessengerClient:
 
             await self.send(packet)
 
+    async def _pick_companion(self) -> None:
+        while True:
+            name = (await self.input.read("companion >")).strip()
+            print("\033[1A\033[2K", end="", flush=True)
+
+            if not name:
+                continue
+            if name.startswith("/"):
+                self.ui.error("Введи имя собеседника")
+                continue
+
+            self.ui.reset_group()
+            self.companion = name
+            self.ui.system(f"Чат с {name}")
+            await self.send(
+                GetHistoryRequest(
+                    payload=GetHistoryPayload(username=name)
+                )
+            )
+
+            return
 
     async def run(self) -> None:
 
         self.ui.banner()
 
         await self.connect()
-
         await self.authenticate()
+
         with patch_stdout(raw=True):
             await asyncio.gather(
                 self.receiver(),

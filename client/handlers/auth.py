@@ -18,6 +18,6 @@ class AuthHandler(
             packet: AuthResponse
     ) -> None:
 
-        ctx.ui.success(
-            "Authenticated"
-        )
+        ctx.ui.success("Authenticated")
+        if ctx.client:
+            ctx.client._authenticated.set()

@@ -18,6 +18,22 @@ class ConsoleUI:
             emoji=False
         )
 
+        self._last_key: str | None = None
+        self._last_ts: str | None = None
+
+        self._group_gap = 5 * 60
+
+    def reset_group(self) -> None:
+        self._last_key = None
+        self._last_ts = None
+
+    def _same_group(self, key: str, timestamp: int) -> bool:
+        if self._last_key != key:
+            return False
+        if self._last_ts is None:
+            return False
+        return (timestamp - self._last_ts) <= self._group_gap
+
     def banner(self) -> None:
         self.console.print()
 
@@ -65,18 +81,34 @@ class ConsoleUI:
         )
 
     def message(self, sender: str, text: str, timestamp: int) -> None:
+        key = sender
         t = datetime.fromtimestamp(timestamp).strftime("%H:%M")
-        print_formatted_text(HTML(
-            f"<ansiblue>{t}</ansiblue>  <b>{sender}</b>\n"
-            f"         {text}\n"
-        ))
 
-    def own_message(self, to: str, text: str) -> None:
+        if self._same_group(key, timestamp):
+            print_formatted_text(HTML(f"         {text}"))
+        else:
+            print_formatted_text(HTML(
+                f"<ansiblue>{t}</ansiblue>  <b>{sender}</b>\n"
+                f"         {text}\n"
+            ))
+        self._last_key = key
+        self._last_ts = timestamp
+
+    def own_message(self, to: str, text: str, timestamp: int | None = None) -> None:
+        key = "you"
+        ts = timestamp or int(datetime.now().timestamp())
         t = datetime.now().strftime("%H:%M")
-        print_formatted_text(HTML(
-            f"<ansigreen>{t}</ansigreen>  <b>you</b> → {to}\n"
-            f"         {text}\n"
-        ))
+
+        if self._same_group(key, ts):
+            print_formatted_text(HTML(f"         {text}"))
+        else:
+            print_formatted_text(HTML(
+                f"\n<ansigreen>{t}</ansigreen>  <b>you</b> → {to}\n"
+                f"         {text}"
+            ))
+
+        self._last_key = key
+        self._last_ts = ts
 
 
 
