@@ -16,7 +16,8 @@ from .models import (
 
     PongResponse,
 
-    HistoryResponse
+    HistoryResponse,
+    PublicKeyResponse
 )
 
 
@@ -38,5 +39,6 @@ __all__ = [
 
     "PongResponse",
 
-    "HistoryResponse"
+    "HistoryResponse",
+    "PublicKeyResponse"
 ]

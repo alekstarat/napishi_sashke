@@ -5,11 +5,19 @@ from pydantic import BaseModel, Field
 
 class AuthPayload(BaseModel):
     token: str
+    public_key: str
 
 
 class AuthRequest(BaseModel):
     type: Literal["auth"] = "auth"
     payload: AuthPayload
+
+class GetPublicKeyPayload(BaseModel):
+    username: str
+
+class GetPublicKeyRequest(BaseModel):
+    type: Literal["get_public_key"] = "get_public_key"
+    payload: GetPublicKeyPayload
 
 
 class SendMessagePayload(BaseModel):
@@ -35,6 +43,6 @@ class GetHistoryRequest(BaseModel):
 
 
 ClientPacket = Annotated[
-    AuthRequest | SendMessageRequest | PingRequest | GetHistoryRequest,
+    AuthRequest | SendMessageRequest | PingRequest | GetHistoryRequest | GetPublicKeyRequest,
     Field(discriminator="type"),
 ]

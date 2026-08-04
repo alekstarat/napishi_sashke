@@ -36,6 +36,7 @@ class WebSocketAuthenticator:
 
         user = await self._auth_service.authenticate(
             packet.payload.token,
+            packet.payload.public_key
         )
 
         await self._connections.register(

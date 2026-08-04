@@ -2,18 +2,20 @@ import asyncio
 import json
 
 import websockets
+from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PublicKey
 from websockets.asyncio.client import ClientConnection
 
 from handlers.base import PacketContext
 from handlers.dispatcher import PacketDispatcher
 from protocol import (
     AuthRequest,
-    SendMessageRequest
+    SendMessageRequest, AuthPayload
 )
 from prompt_toolkit.patch_stdout import patch_stdout
 
-from protocol.models import GetHistoryRequest, GetHistoryPayload
+from protocol.models import GetHistoryRequest, GetHistoryPayload, PublicKeyRequest, PublicKeyPayload, PublicKeyResponse
 from protocol.parser import parse_packet
+from services.crypto import CryptoService
 from ui.console import ConsoleUI
 from ui.input import ConsoleInput
 from commands import (
@@ -45,6 +47,8 @@ class MessengerClient:
         self._last_outgoing: tuple[str, str] | None = None
         self.companion = companion
         self._authenticated = asyncio.Event()
+        self.crypto = CryptoService()
+        self.peer_public_key: X25519PublicKey | None = None
 
 
     async def connect(self) -> None:
@@ -59,9 +63,10 @@ class MessengerClient:
     async def authenticate(self) -> None:
 
         packet = AuthRequest(
-            payload={
-                "token": self.token,
-            }
+            payload=AuthPayload(
+                token=self.token,
+                public_key=self.crypto.export_public_key()
+            )
         )
 
         await self.send(
@@ -129,12 +134,20 @@ class MessengerClient:
             self.ui.system(f"Чат с {self.companion}")
 
             await self.send(
-                GetHistoryRequest(
-                    payload=GetHistoryPayload(
+                PublicKeyRequest(
+                    payload=PublicKeyPayload(
                         username=self.companion
                     )
                 )
             )
+
+            # await self.send(
+            #     GetHistoryRequest(
+            #         payload=GetHistoryPayload(
+            #             username=self.companion
+            #         )
+            #     )
+            # )
         else:
             await self._pick_companion()
 
@@ -159,6 +172,16 @@ class MessengerClient:
                 self._last_outgoing = (
                     packet.payload.to,
                     packet.payload.text,
+                )
+            elif isinstance(packet, PublicKeyResponse):
+                self.peer_public_key = (
+                    self.crypto.import_public_key(
+                        packet.payload.public_key
+                    )
+                )
+
+                self.ui.system(
+                    "Public key received."
                 )
 
             await self.send(packet)

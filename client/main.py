@@ -4,7 +4,7 @@ import config
 from client import MessengerClient
 from handlers.dispatcher import PacketDispatcher
 from handlers.history import HistoryHandler
-
+from handlers.public_key import PublicKeyHandler
 from handlers.message import MessageHandler
 from handlers.error import ErrorHandler
 from handlers.auth import AuthHandler
@@ -30,6 +30,7 @@ async def main():
     dispatcher.register(AuthHandler())
     dispatcher.register(SendOkHandler())
     dispatcher.register(HistoryHandler())
+    dispatcher.register(PublicKeyHandler())
 
     client = MessengerClient(
         url=SERVER_URL,

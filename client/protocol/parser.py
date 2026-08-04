@@ -6,7 +6,8 @@ from protocol import (
     ReceiveMessageEvent,
     SendMessageResponse,
     PongResponse,
-    HistoryResponse
+    HistoryResponse,
+    PublicKeyResponse
 )
 
 PACKET_TYPES = (
@@ -15,7 +16,8 @@ PACKET_TYPES = (
     ReceiveMessageEvent,
     SendMessageResponse,
     PongResponse,
-    HistoryResponse
+    HistoryResponse,
+    PublicKeyResponse
 )
 
 

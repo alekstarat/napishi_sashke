@@ -6,6 +6,14 @@ from pydantic import BaseModel, Field
 class AuthResponse(BaseModel):
     type: Literal["auth_ok"] = "auth_ok"
 
+class PublicKeyPayload(BaseModel):
+    username: str
+    public_key: str
+
+class PublicKeyResponse(BaseModel):
+    type: Literal["public_key"] = "public_key"
+    payload: PublicKeyPayload
+
 class HistoryMessage(BaseModel):
     id: str
     sender: str

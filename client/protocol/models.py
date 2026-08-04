@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field
 
 class AuthPayload(BaseModel):
     token: str
+    public_key: str
 
 
 class AuthRequest(BaseModel):
@@ -19,6 +20,20 @@ class AuthRequest(BaseModel):
 class AuthResponse(BaseModel):
     type: Literal["auth_ok"] = "auth_ok"
 
+class PublicKeyPayload(BaseModel):
+    username: str
+
+class PublicKeyRequest(BaseModel):
+    type: Literal["get_public_key"] = "get_public_key"
+    payload: PublicKeyPayload
+
+class PublicKeyResponsePayload(BaseModel):
+    public_key: str
+    username: str
+
+class PublicKeyResponse(BaseModel):
+    type: Literal["public_key"] = "public_key"
+    payload: PublicKeyResponsePayload
 
 # =====================
 # Message sending

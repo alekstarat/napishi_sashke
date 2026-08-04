@@ -20,6 +20,11 @@ class User(Base):
         unique=True
     )
 
+    public_key = mapped_column(
+        Text,
+        nullable=True,
+    )
+
 class Message(Base):
     __tablename__ = "messages"
 

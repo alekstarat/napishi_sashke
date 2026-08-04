@@ -69,6 +69,8 @@ async def websocket_endpoint(
                 websocket.receive_json()
             )
 
+            print(raw_packet)
+
             packet = parser.parse(
                 raw_packet
             )

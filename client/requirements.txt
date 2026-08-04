@@ -2,3 +2,4 @@ websockets
 pydantic
 rich
 prompt-toolkit
+cryptography
