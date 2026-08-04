@@ -27,6 +27,7 @@ class MessengerClient:
         self,
         url: str,
         token: str,
+        companion: str,
         dispatcher: PacketDispatcher,
     ) -> None:
 
@@ -42,7 +43,7 @@ class MessengerClient:
         self.websocket: ClientConnection | None = None
 
         self._last_outgoing: tuple[str, str] | None = None
-        self.companion: str | None = None
+        self.companion = companion
         self._authenticated = asyncio.Event()
 
 
@@ -122,7 +123,20 @@ class MessengerClient:
 
     async def sender(self) -> None:
         await self._authenticated.wait()
-        await self._pick_companion()
+        # await self._pick_companion()
+        if self.companion:
+            self.ui.reset_group()
+            self.ui.system(f"Чат с {self.companion}")
+
+            await self.send(
+                GetHistoryRequest(
+                    payload=GetHistoryPayload(
+                        username=self.companion
+                    )
+                )
+            )
+        else:
+            await self._pick_companion()
 
         while True:
             prompt = f"{self.companion} > " if self.companion else "you >"

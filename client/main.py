@@ -1,5 +1,6 @@
 import asyncio
 
+import config
 from client import MessengerClient
 from handlers.dispatcher import PacketDispatcher
 from handlers.history import HistoryHandler
@@ -34,6 +35,7 @@ async def main():
         url=SERVER_URL,
         token=token,
         dispatcher=dispatcher,
+        companion=config.COMPANION
     )
 
 
