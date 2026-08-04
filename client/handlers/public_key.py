@@ -16,9 +16,9 @@ class PublicKeyHandler(PacketHandler[PublicKeyResponse]):
             )
         )
 
-        ctx.ui.system(
-            f"Public key received for {packet.payload.username}"
-        )
+        # ctx.ui.system(
+        #     f"Public key received for {packet.payload.username}"
+        # )
 
         await ctx.client.send(
             GetHistoryRequest(

@@ -5,6 +5,7 @@ from cryptography.hazmat.primitives.asymmetric.x25519 import (
 )
 from cryptography.hazmat.primitives.ciphers.aead import  AESGCM
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
+from cryptography.exceptions import InvalidTag
 import base64
 from pathlib import Path
 import os
@@ -117,3 +118,13 @@ class CryptoService:
         )
 
         return plaintext.decode("utf-8")
+
+    def try_decrypt(
+            self,
+            text: str,
+            peer_public_key: X25519PublicKey
+    ) -> str:
+        try:
+            return self.decrypt(ciphertext=text, peer_public_key=peer_public_key)
+        except (InvalidTag, ValueError):
+            return text

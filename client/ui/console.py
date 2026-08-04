@@ -39,7 +39,7 @@ class ConsoleUI:
 
         self.console.print(
             Panel.fit(
-                "[bold cyan]Private Messenger[/bold cyan]",
+                "[bold cyan]napishi_sashke[/bold cyan]",
                 border_style="cyan",
             )
         )

@@ -141,13 +141,6 @@ class MessengerClient:
                 )
             )
 
-            # await self.send(
-            #     GetHistoryRequest(
-            #         payload=GetHistoryPayload(
-            #             username=self.companion
-            #         )
-            #     )
-            # )
         else:
             await self._pick_companion()
 
@@ -169,19 +162,32 @@ class MessengerClient:
                 continue
 
             if isinstance(packet, SendMessageRequest):
-                self._last_outgoing = (
-                    packet.payload.to,
-                    packet.payload.text,
+                if self.peer_public_key is None:
+                    self.ui.error(
+                        "Public key not received yet."
+                    )
+                    continue
+
+                plaintext = packet.payload.text
+
+                ciphertext = self.crypto.encrypt(
+                    plaintext=plaintext,
+                    peer_public_key=self.peer_public_key,
                 )
-            elif isinstance(packet, PublicKeyResponse):
-                self.peer_public_key = (
-                    self.crypto.import_public_key(
-                        packet.payload.public_key
+
+                packet.payload.text = ciphertext
+
+                packet = SendMessageRequest(
+                    payload=packet.payload.model_copy(
+                        update={
+                            "text": ciphertext,
+                        }
                     )
                 )
 
-                self.ui.system(
-                    "Public key received."
+                self._last_outgoing = (
+                    packet.payload.to,
+                    plaintext,
                 )
 
             await self.send(packet)
@@ -199,12 +205,14 @@ class MessengerClient:
 
             self.ui.reset_group()
             self.companion = name
-            self.ui.system(f"Чат с {name}")
-            await self.send(
-                GetHistoryRequest(
-                    payload=GetHistoryPayload(username=name)
-                )
-            )
+            # self.ui.system(f"Чат с {name}")
+            # await self.send(
+            #     GetHistoryRequest(
+            #         payload=GetHistoryPayload(username=name)
+            #     )
+            # )
+
+            await self.sender()
 
             return
 

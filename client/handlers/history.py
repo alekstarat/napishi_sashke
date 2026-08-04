@@ -9,14 +9,20 @@ class HistoryHandler(PacketHandler[HistoryResponse]):
                      packet: HistoryResponse):
         ctx.ui.reset_group()
         companion = packet.payload.companion
-        ctx.ui.system(f"История с {companion}")
+        # ctx.ui.system(f"История с {companion}")
 
         for m in packet.payload.messages:
+
+            text = m.text
+
+            if ctx.client.peer_public_key is not None:
+                text = ctx.client.crypto.try_decrypt(text, ctx.client.peer_public_key)
+
             if m.sender == ctx.client.me:
-                ctx.ui.own_message(to=companion, text=m.text)
+                ctx.ui.own_message(to=companion, text=text)
             else:
                 ctx.ui.message(
                     sender=m.sender,
-                    text=m.text,
+                    text=text,
                     timestamp=m.timestamp
                 )

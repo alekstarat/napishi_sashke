@@ -3,4 +3,4 @@ SERVER_URL = (
 )
 
 TOKEN = None
-COMPANION = "sotkin"
+COMPANION = None
