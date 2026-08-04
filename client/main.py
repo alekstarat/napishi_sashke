@@ -11,15 +11,19 @@ from handlers.auth import AuthHandler
 from handlers.send_ok import SendOkHandler
 from config import (
     SERVER_URL,
+    TOKEN
 )
 
 
 async def main():
 
-    token = input(
-        "Token: "
-    )
 
+    if TOKEN is None:
+        token = input(
+            "Token: "
+        )
+    else:
+        token = TOKEN
 
     dispatcher = PacketDispatcher(
         handlers={}

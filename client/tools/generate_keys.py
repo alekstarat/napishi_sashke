@@ -1,10 +1,13 @@
 import base64
+import os
 from pathlib import Path
 
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.x25519 import (
     X25519PrivateKey,
 )
+
+from tools.generate_token import generate_auth_token
 
 KEYS_DIR = Path(__file__).parent.parent / "keys"
 
@@ -16,30 +19,34 @@ def save_key(path: Path, data: bytes) -> None:
     )
 
 
-def main() -> None:
+def main(usernames: list[str]) -> None:
     KEYS_DIR.mkdir(exist_ok=True)
 
-    private_key = X25519PrivateKey.generate()
-    public_key = private_key.public_key()
+    for name in usernames:
 
-    private_bytes = private_key.private_bytes(
-        encoding=serialization.Encoding.Raw,
-        format=serialization.PrivateFormat.Raw,
-        encryption_algorithm=serialization.NoEncryption(),
-    )
+        private_key = X25519PrivateKey.generate()
+        public_key = private_key.public_key()
 
-    public_bytes = public_key.public_bytes(
-        encoding=serialization.Encoding.Raw,
-        format=serialization.PublicFormat.Raw,
-    )
+        private_bytes = private_key.private_bytes(
+            encoding=serialization.Encoding.Raw,
+            format=serialization.PrivateFormat.Raw,
+            encryption_algorithm=serialization.NoEncryption(),
+        )
 
-    save_key(KEYS_DIR / "private.key", private_bytes)
-    save_key(KEYS_DIR / "public.key", public_bytes)
+        public_bytes = public_key.public_bytes(
+            encoding=serialization.Encoding.Raw,
+            format=serialization.PublicFormat.Raw,
+        )
 
-    print("Keys generated successfully.")
-    print(f"Private key: {KEYS_DIR / 'private.key'}")
-    print(f"Public key : {KEYS_DIR / 'public.key'}")
+        os.mkdir(KEYS_DIR / name)
+
+        save_key(KEYS_DIR / name / "private.key", private_bytes)
+        save_key(KEYS_DIR / name / "public.key", public_bytes)
+
+        print(f"\n{name} - {generate_auth_token()}")
+        print(f"Private key: {KEYS_DIR / 'private.key'}")
+        print(f"Public key : {KEYS_DIR / 'public.key'}")
 
 
 if __name__ == "__main__":
-    main()
+    main(["сашер", "соткин", "лёшк", "киорио"])
