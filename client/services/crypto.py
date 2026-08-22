@@ -76,25 +76,55 @@ class CryptoService:
 
         return hkdf.derive(secret)
 
-    def encrypt(
+    def encrypt_bytes(
             self,
-            plaintext: str,
+            data: bytes,
             peer_public_key: X25519PublicKey
-    ) -> str:
+    ) -> bytes:
         key = self.derive_key(peer_public_key)
 
         aes = AESGCM(key)
 
         nonce = os.urandom(12)
 
-        ciphertext = aes.encrypt(
+        encrypted = aes.encrypt(
             nonce,
-            plaintext.encode("utf-8"),
+            data,
             None
         )
 
+        return nonce + encrypted
+
+    def decrypt_bytes(
+            self,
+            data: bytes,
+            peer_public_key: X25519PublicKey,
+    ) -> bytes:
+        key = self.derive_key(peer_public_key)
+
+        nonce = data[:12]
+        encrypted = data[12:]
+
+        aes = AESGCM(key)
+
+        return aes.decrypt(
+            nonce,
+            encrypted,
+            None,
+        )
+
+    def encrypt(
+            self,
+            plaintext: str,
+            peer_public_key: X25519PublicKey,
+    ) -> str:
+        encrypted = self.encrypt_bytes(
+            plaintext.encode("utf-8"),
+            peer_public_key,
+        )
+
         return base64.b64encode(
-            nonce + ciphertext
+            encrypted
         ).decode("utf-8")
 
     def decrypt(
@@ -102,19 +132,11 @@ class CryptoService:
             ciphertext: str,
             peer_public_key: X25519PublicKey,
     ) -> str:
-        key = self.derive_key(peer_public_key)
+        encrypted = base64.b64decode(ciphertext)
 
-        data = base64.b64decode(ciphertext)
-
-        nonce = data[:12]
-        encrypted = data[12:]
-
-        aes = AESGCM(key)
-
-        plaintext = aes.decrypt(
-            nonce,
+        plaintext = self.decrypt_bytes(
             encrypted,
-            None,
+            peer_public_key,
         )
 
         return plaintext.decode("utf-8")

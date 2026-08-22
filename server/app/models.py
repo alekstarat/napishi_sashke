@@ -45,6 +45,9 @@ class Message(Base):
 
     text: Mapped[str]
 
+    file_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    media_type: Mapped[str | None] = mapped_column(String(16), nullable=True)
+
     timestamp: Mapped[datetime]
 
     delivered: Mapped[bool]

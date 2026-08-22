@@ -13,7 +13,7 @@ from app.database import engine
 from app.handlers.base import PacketContext
 from app.models import Base
 from app.protocol import parser
-
+from app.routers.files import router as files_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -25,11 +25,12 @@ async def lifespan(app: FastAPI):
 
     yield
 
-
 app = FastAPI(
     title="Private Messenger",
     lifespan=lifespan,
 )
+
+app.include_router(files_router)
 
 
 @app.get("/")

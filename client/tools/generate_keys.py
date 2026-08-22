@@ -44,9 +44,8 @@ def main(usernames: list[str]) -> None:
         save_key(KEYS_DIR / name / "public.key", public_bytes)
 
         print(f"\n{name} - {generate_auth_token()}")
-        print(f"Private key: {KEYS_DIR / 'private.key'}")
-        print(f"Public key : {KEYS_DIR / 'public.key'}")
 
 
 if __name__ == "__main__":
-    main(["сашер", "соткин", "лёшк", "киорио"])
+    #main(["сашер", "соткин", "лёшк", "киорио"])
+    main(["соткин"])

@@ -45,12 +45,16 @@ class MessageService:
         sender: User,
         recipient: User,
         text: str,
+        file_id: str | None = None,
+        media_type: str | None = None
     ) -> Message:
         message = Message(
             uuid=str(uuid4()),
             sender_id=sender.id,
             recipient_id=recipient.id,
             text=text,
+            file_id=file_id,
+            media_type=media_type,
             timestamp=datetime.now(UTC),
             delivered=False,
         )
@@ -95,6 +99,8 @@ class MessageService:
         sender: User,
         recipient: str,
         text: str,
+        file_id: str | None = None,
+        media_type: str | None = None
     ) -> Message:
         async with SessionLocal() as session:
             recipient_user = await self._get_user_by_username(
@@ -107,6 +113,8 @@ class MessageService:
                 sender,
                 recipient_user,
                 text,
+                file_id=file_id,
+                media_type=media_type
             )
 
             await self._deliver_message(

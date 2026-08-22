@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from protocol import SendMessagePayload, SendMessageRequest
 from protocol.models import GetHistoryRequest, GetHistoryPayload
 
@@ -19,6 +21,21 @@ def parse_line(line: str, companion: str | None):
         if not name:
             raise CommandError("Usage: /chat <user>")
         return ("switch", name)
+
+    for media in ("photo", "video", "audio"):
+        prefix = f"/{media} "
+        if line.startswith(prefix):
+            rest = line[len(prefix):].strip()
+            if not rest:
+                raise CommandError(f"Usage: /{media} <path> [caption]")
+            parts = rest.split(maxsplit=1)
+            path = Path(parts[0]).expanduser()
+            caption = parts[1] if len(parts) > 1 else ""
+            if not path.is_file():
+                raise CommandError(f"File not found: {path}")
+            if not companion:
+                raise CommandError("Сначала выбери собеседника")
+            return ("media", media, path, caption, companion)
 
     if line.startswith("/"):
         raise CommandError("Unknown command")

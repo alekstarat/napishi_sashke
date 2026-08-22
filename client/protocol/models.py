@@ -42,6 +42,8 @@ class PublicKeyResponse(BaseModel):
 class SendMessagePayload(BaseModel):
     to: str
     text: str
+    file_id: str | None = None
+    media_type: str | None = None
 
 
 class SendMessageRequest(BaseModel):
@@ -67,6 +69,8 @@ class ReceiveMessagePayload(BaseModel):
     sender: str
     text: str
     timestamp: int
+    file_id: str | None = None
+    media_type: str | None = None
 
 
 class ReceiveMessageEvent(BaseModel):
@@ -90,6 +94,8 @@ class HistoryMessage(BaseModel):
     recipient: str
     text: str
     timestamp: int
+    file_id: str | None = None
+    media_type: str | None = None
 
 class HistoryPayload(BaseModel):
     companion: str          # с кем диалог

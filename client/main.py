@@ -1,4 +1,5 @@
 import asyncio
+from pathlib import Path
 
 import config
 from client import MessengerClient
@@ -42,7 +43,6 @@ async def main():
         dispatcher=dispatcher,
         companion=config.COMPANION
     )
-
 
     await client.run()
 

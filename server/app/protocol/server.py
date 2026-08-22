@@ -20,6 +20,8 @@ class HistoryMessage(BaseModel):
     recipient: str
     text: str
     timestamp: int
+    file_id: str | None = None
+    media_type: str | None = None
 
 class HistoryPayload(BaseModel):
     companion: str
@@ -54,6 +56,8 @@ class ReceiveMessagePayload(BaseModel):
     sender: str
     text: str
     timestamp: int
+    file_id: str | None = None
+    media_type: str | None = None
 
 
 class ReceiveMessageEvent(BaseModel):
@@ -67,6 +71,7 @@ ServerPacket = Annotated[
     | PongResponse
     | ReceiveMessageEvent
     | SendMessageResponse
-    | HistoryResponse,
+    | HistoryResponse
+    | PublicKeyResponse,
     Field(discriminator="type"),
 ]

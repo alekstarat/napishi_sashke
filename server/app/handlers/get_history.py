@@ -36,7 +36,9 @@ class GetHistoryHandler(PacketHandler[GetHistoryRequest]):
                             sender=m.sender.username,
                             recipient=m.recipient.username,
                             text=m.text,
-                            timestamp=int(m.timestamp.timestamp())
+                            timestamp=int(m.timestamp.timestamp()),
+                            file_id=m.file_id,
+                            media_type=m.media_type
                         )
                         for m in messages
                     ]

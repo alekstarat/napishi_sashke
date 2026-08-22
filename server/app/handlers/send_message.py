@@ -28,6 +28,8 @@ class SendMessageHandler(
             sender=ctx.user,
             recipient=packet.payload.to,
             text=packet.payload.text,
+            file_id=packet.payload.file_id,
+            media_type=packet.payload.media_type
         )
 
         await sender.send(

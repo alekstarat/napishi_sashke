@@ -22,7 +22,9 @@ class GetPublicKeyRequest(BaseModel):
 
 class SendMessagePayload(BaseModel):
     to: str
-    text: str
+    text: str = ""
+    file_id: str | None = None
+    media_type: str | None = None
 
 
 class SendMessageRequest(BaseModel):

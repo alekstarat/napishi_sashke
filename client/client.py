@@ -1,6 +1,6 @@
 import asyncio
 import json
-
+from pathlib import Path
 import websockets
 from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PublicKey
 from websockets.asyncio.client import ClientConnection
@@ -9,13 +9,14 @@ from handlers.base import PacketContext
 from handlers.dispatcher import PacketDispatcher
 from protocol import (
     AuthRequest,
-    SendMessageRequest, AuthPayload
+    SendMessageRequest, AuthPayload, SendMessagePayload
 )
 from prompt_toolkit.patch_stdout import patch_stdout
 
 from protocol.models import GetHistoryRequest, GetHistoryPayload, PublicKeyRequest, PublicKeyPayload, PublicKeyResponse
 from protocol.parser import parse_packet
 from services.crypto import CryptoService
+from services.file import FileService
 from ui.console import ConsoleUI
 from ui.input import ConsoleInput
 from commands import (
@@ -49,6 +50,19 @@ class MessengerClient:
         self._authenticated = asyncio.Event()
         self.crypto = CryptoService()
         self.peer_public_key: X25519PublicKey | None = None
+
+        http_server_url = (
+            self.url
+            .replace("ws://", "http://")
+            .replace("wss://", "https://")
+            .removesuffix("/ws")
+        )
+
+        self.file_service = FileService(
+            self.crypto,
+            server_url=http_server_url
+        )
+
 
 
     async def connect(self) -> None:
@@ -126,6 +140,43 @@ class MessengerClient:
 
         return result
 
+    async def _send_media(self, media_type: str, path: Path, caption: str, to: str):
+        if self.peer_public_key is None:
+            self.ui.error("Public key not received yet.")
+            return
+
+        self.ui.info(f"Uploading {media_type}...")
+        try:
+            file_id = await self.file_service.upload_file(
+                path, self.peer_public_key
+            )
+        except Exception as e:
+            self.ui.error(f"Upload failed: {e}")
+            return
+
+        text = caption
+        if caption:
+            text = self.crypto.encrypt(
+                plaintext=caption,
+                peer_public_key=self.peer_public_key,
+            )
+
+        packet = SendMessageRequest(
+            payload=SendMessagePayload(
+                to=to,
+                text=text,
+                file_id=file_id,
+                media_type=media_type,
+            )
+        )
+
+        display = f"[{media_type}] {path.name}"
+        if caption:
+            display = f"{display}\n{caption}"
+
+        self._last_outgoing = (to, display)
+        await self.send(packet)
+
     async def sender(self) -> None:
         await self._authenticated.wait()
         # await self._pick_companion()
@@ -161,6 +212,12 @@ class MessengerClient:
             if packet is None:
                 continue
 
+            # media: ("media", media_type, path, caption, companion)
+            if isinstance(packet, tuple) and packet[0] == "media":
+                _, media_type, path, caption, to = packet
+                await self._send_media(media_type, path, caption, to)
+                continue
+
             if isinstance(packet, SendMessageRequest):
                 if self.peer_public_key is None:
                     self.ui.error(
@@ -174,8 +231,6 @@ class MessengerClient:
                     plaintext=plaintext,
                     peer_public_key=self.peer_public_key,
                 )
-
-                packet.payload.text = ciphertext
 
                 packet = SendMessageRequest(
                     payload=packet.payload.model_copy(
@@ -205,14 +260,14 @@ class MessengerClient:
 
             self.ui.reset_group()
             self.companion = name
-            # self.ui.system(f"Чат с {name}")
-            # await self.send(
-            #     GetHistoryRequest(
-            #         payload=GetHistoryPayload(username=name)
-            #     )
-            # )
 
-            await self.sender()
+            await self.send(
+                PublicKeyRequest(
+                    payload=PublicKeyPayload(
+                        username=name
+                    )
+                )
+            )
 
             return
 

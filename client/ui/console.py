@@ -135,6 +135,10 @@ class ConsoleUI:
     [cyan]Commands:[/cyan]
 
       /msg <user> <text>
+      /photo <path> [caption]
+      /video <path> [caption]
+      /audio <path> [caption]
+      /chat <user>
       /help
       /quit
 
