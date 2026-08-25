@@ -16,11 +16,31 @@ def parse_line(line: str, companion: str | None):
     if line == "/quit":
         raise SystemExit
 
+    if line == "/help":
+        return ("help",)
+
     if line.startswith("/chat "):
         name = line.split(maxsplit=1)[1].strip()
         if not name:
             raise CommandError("Usage: /chat <user>")
         return ("switch", name)
+
+    # /voice — start or stop recording
+    if line == "/voice" or line.startswith("/voice "):
+        if not companion:
+            raise CommandError("Сначала выбери собеседника")
+        return ("voice", companion)
+
+    # /play [n]
+    if line == "/play" or line.startswith("/play "):
+        parts = line.split()
+        idx = None
+        if len(parts) >= 2:
+            try:
+                idx = int(parts[1])
+            except ValueError:
+                raise CommandError("Usage: /play [номер]")
+        return ("play", idx)
 
     for media in ("photo", "video", "audio"):
         prefix = f"/{media} "
@@ -46,6 +66,7 @@ def parse_line(line: str, companion: str | None):
     return SendMessageRequest(
         payload=SendMessagePayload(to=companion, text=line)
     )
+
 
 def parse_command(
     command: str,
@@ -85,4 +106,3 @@ def parse_command(
         raise CommandError(
             Exception("Unknown command")
         )
-

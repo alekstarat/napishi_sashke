@@ -4,3 +4,5 @@ rich
 prompt-toolkit
 cryptography
 httpx
+pillow
+rich-pixels

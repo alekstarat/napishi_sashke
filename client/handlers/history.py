@@ -3,6 +3,7 @@ from pathlib import Path
 from protocol.models import HistoryResponse
 from handlers.base import PacketHandler, PacketContext
 
+
 class HistoryHandler(PacketHandler[HistoryResponse]):
     packet_type = HistoryResponse
 
@@ -21,7 +22,7 @@ class HistoryHandler(PacketHandler[HistoryResponse]):
             if ctx.client.peer_public_key is not None and text:
                 text = ctx.client.crypto.try_decrypt(text, ctx.client.peer_public_key)
 
-            display = text or ""
+            media_path: Path | None = None
 
             if file_id and media_type and ctx.client.peer_public_key is not None:
                 try:
@@ -30,6 +31,7 @@ class HistoryHandler(PacketHandler[HistoryResponse]):
                         "photo": ".jpg",
                         "video": ".mp4",
                         "audio": ".ogg",
+                        "voice": ".ogg",
                     }.get(media_type, "")
                     dest = dest_dir / f"{file_id}{ext}"
                     if not dest.exists():
@@ -38,21 +40,27 @@ class HistoryHandler(PacketHandler[HistoryResponse]):
                             dest,
                             ctx.client.peer_public_key,
                         )
-                    label = f"[{media_type}] {dest.name}"
-                    if text:
-                        display = f"{label}\n{text}"
-                    else:
-                        display = label
+                    media_path = dest
                 except Exception as e:
-                    display = f"[{media_type}] (download failed: {e})"
+                    err = f"[{media_type}] (download failed: {e})"
                     if text:
-                        display = f"{display}\n{text}"
+                        text = f"{err}\n{text}"
+                    else:
+                        text = err
 
             if m.sender == ctx.client.me:
-                ctx.ui.own_message(to=companion, text=display)
+                ctx.ui.own_message_with_media(
+                    to=companion,
+                    text=text or "",
+                    media_path=media_path,
+                    media_type=media_type,
+                    timestamp=m.timestamp,
+                )
             else:
-                ctx.ui.message(
+                ctx.ui.message_with_media(
                     sender=m.sender,
-                    text=display,
-                    timestamp=m.timestamp
+                    text=text or "",
+                    timestamp=m.timestamp,
+                    media_path=media_path,
+                    media_type=media_type,
                 )

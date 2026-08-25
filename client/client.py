@@ -41,7 +41,9 @@ class MessengerClient:
         self.me = "ты"
 
         self.ui = ConsoleUI()
-        self.input = ConsoleInput()
+        self.input = ConsoleInput(
+            on_play_last=lambda: self.ui.play_voice(None)
+        )
 
         self.websocket: ClientConnection | None = None
 
@@ -50,6 +52,7 @@ class MessengerClient:
         self._authenticated = asyncio.Event()
         self.crypto = CryptoService()
         self.peer_public_key: X25519PublicKey | None = None
+        self._recording_task: asyncio.Task | None = None
 
         http_server_url = (
             self.url
@@ -175,7 +178,41 @@ class MessengerClient:
             display = f"{display}\n{caption}"
 
         self._last_outgoing = (to, display)
+        # Show local media immediately (thumbnail / pixels / waveform)
+        self.ui.own_message_with_media(
+            to=to,
+            text=caption or "",
+            media_path=path,
+            media_type=media_type,
+        )
         await self.send(packet)
+
+    async def _toggle_voice(self, to: str) -> None:
+        """Start or stop voice recording and send when stopped."""
+        vs = self.ui.voice_service
+
+        if vs.is_recording:
+            path = vs.stop_recording()
+            self.ui.clear_recording_status()
+            if path is None:
+                self.ui.error("Запись слишком короткая или не удалась")
+                return
+            await self._send_media("voice", path, "", to)
+            return
+
+        # Start recording
+        try:
+            vs.start_recording()
+        except Exception as e:
+            self.ui.error(f"Не удалось начать запись: {e}")
+            self.ui.info("Проверь микрофон и что ffmpeg видит pulse/alsa")
+            return
+
+        wf = vs.live_waveform(24)
+        self.ui.console.print(
+            f"[bold red]● REC[/bold red]  [yellow]{wf}[/yellow]  "
+            f"[dim]/voice или Enter — стоп и отправить)[/dim]"
+        )
 
     async def sender(self) -> None:
         await self._authenticated.wait()
@@ -196,12 +233,23 @@ class MessengerClient:
             await self._pick_companion()
 
         while True:
-            prompt = f"{self.companion} > " if self.companion else "you >"
+            recording = self.ui.voice_service.is_recording
+            if recording:
+                prompt = "● rec > "
+            else:
+                prompt = f"{self.companion} > " if self.companion else "you >"
+
             line = await self.input.read(prompt)
-            if not line:
-                continue
 
             print("\033[1A\033[2K", end="", flush=True)
+
+            # Empty Enter while recording → stop & send
+            if not line and self.ui.voice_service.is_recording and self.companion:
+                await self._toggle_voice(self.companion)
+                continue
+
+            if not line:
+                continue
 
             try:
                 packet = self._line_to_packet(line)
@@ -210,6 +258,27 @@ class MessengerClient:
                 continue
 
             if packet is None:
+                continue
+
+            # ("help",)
+            if isinstance(packet, tuple) and packet[0] == "help":
+                self.ui.help()
+                continue
+
+            # ("voice", companion)
+            if isinstance(packet, tuple) and packet[0] == "voice":
+                _, to = packet
+                await self._toggle_voice(to)
+                continue
+
+            # ("play", index|None)
+            if isinstance(packet, tuple) and packet[0] == "play":
+                _, idx = packet
+                ok = self.ui.play_voice(idx)
+                if not ok:
+                    self.ui.error("Нет голосовых сообщений для воспроизведения")
+                else:
+                    self.ui.info(f"▶ play {idx if idx is not None else 'last'}")
                 continue
 
             # media: ("media", media_type, path, caption, companion)
@@ -272,6 +341,13 @@ class MessengerClient:
             return
 
     async def run(self) -> None:
+
+        try:
+            import sys
+            sys.stdout.write("\x1b[?1000l\x1b[?1002l\x1b[?1003l\x1b[?1006l")
+            sys.stdout.flush()
+        except Exception:
+            pass
 
         self.ui.banner()
 
