@@ -48,4 +48,4 @@ def main(usernames: list[str]) -> None:
 
 if __name__ == "__main__":
     #main(["сашер", "соткин", "лёшк", "киорио"])
-    main(["соткин"])
+    main(["соткин", "сашер"])
