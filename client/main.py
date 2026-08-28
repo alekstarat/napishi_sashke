@@ -1,5 +1,5 @@
 import asyncio
-from pathlib import Path
+import sys
 
 import config
 from client import MessengerClient
@@ -17,14 +17,14 @@ from config import (
 
 
 async def main():
-
-
     if TOKEN is None:
-        token = input(
-            "Token: "
-        )
+        token = input("Token: ").strip()
     else:
-        token = TOKEN
+        token = TOKEN.strip()
+
+    if not token:
+        print("Token is empty", file=sys.stderr)
+        sys.exit(1)
 
     dispatcher = PacketDispatcher(
         handlers={}
@@ -48,7 +48,7 @@ async def main():
 
 
 if __name__ == "__main__":
-
-    asyncio.run(
-        main()
-    )
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        print("\nbye")

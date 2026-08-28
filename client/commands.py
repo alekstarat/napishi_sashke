@@ -42,7 +42,7 @@ def parse_line(line: str, companion: str | None):
                 raise CommandError("Usage: /play [номер]")
         return ("play", idx)
 
-    for media in ("photo", "video", "audio"):
+    for media in ("photo", "audio"):
         prefix = f"/{media} "
         if line.startswith(prefix):
             rest = line[len(prefix):].strip()

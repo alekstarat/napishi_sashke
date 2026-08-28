@@ -29,7 +29,6 @@ class HistoryHandler(PacketHandler[HistoryResponse]):
                     dest_dir = Path(__file__).parent.parent / "cache" / "decrypted"
                     ext = {
                         "photo": ".jpg",
-                        "video": ".mp4",
                         "audio": ".ogg",
                         "voice": ".ogg",
                     }.get(media_type, "")

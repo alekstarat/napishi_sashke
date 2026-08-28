@@ -31,7 +31,6 @@ class MessageHandler(PacketHandler[ReceiveMessageEvent]):
                 dest_dir = Path(__file__).parent.parent / "cache" / "decrypted"
                 ext = {
                     "photo": ".jpg",
-                    "video": ".mp4",
                     "audio": ".ogg",
                     "voice": ".ogg",
                 }.get(media_type, "")
@@ -44,7 +43,6 @@ class MessageHandler(PacketHandler[ReceiveMessageEvent]):
                 media_path = dest
                 ctx.ui.info(f"Saved {media_type} → {dest}")
             except Exception as e:
-                # fallback: show error as text
                 err = f"[{media_type}] (download failed: {e})"
                 if text:
                     text = f"{err}\n{text}"

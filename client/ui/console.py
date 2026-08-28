@@ -1,6 +1,4 @@
 import sys
-import tempfile
-import subprocess
 from datetime import datetime
 from pathlib import Path
 
@@ -108,6 +106,10 @@ class ConsoleUI:
         try:
             with Image.open(path) as im:
                 im = im.convert("RGB")
+                # Reject tiny / empty-looking files that become a solid block wall
+                if im.width < 8 or im.height < 8:
+                    return False
+
                 max_w = min(self.console.size.width - 12, self._media_max_width)
                 if im.width > max_w:
                     ratio = max_w / im.width
@@ -117,44 +119,22 @@ class ConsoleUI:
                     new_h = max(2, new_h)
                     im = im.resize((max_w, new_h), Image.Resampling.LANCZOS)
                 elif im.height % 2:
-                    # ensure even height for half-blocks
                     im = im.resize((im.width, im.height - 1), Image.Resampling.LANCZOS)
 
+                # Cap height so a bad image cannot flood the terminal
+                max_h = 40  # half-block rows ≈ 20 terminal lines
+                if im.height > max_h:
+                    ratio = max_h / im.height
+                    new_w = max(8, int(im.width * ratio))
+                    if new_w % 2:
+                        new_w -= 1
+                    im = im.resize((new_w, max_h), Image.Resampling.LANCZOS)
+
                 pixels = Pixels.from_image(im)
-                # indent to match message text
                 self.console.print(pixels)
             return True
         except Exception:
             return False
-
-    def _extract_video_frame(self, video_path: Path) -> Path | None:
-        """Extract first frame of video to a temporary JPEG. Returns path or None."""
-        try:
-            tmp = tempfile.NamedTemporaryFile(
-                suffix=".jpg", delete=False
-            )
-            tmp.close()
-            out = Path(tmp.name)
-            # -ss 0 -vframes 1 : first frame, quiet
-            result = subprocess.run(
-                [
-                    "ffmpeg",
-                    "-y",
-                    "-i", str(video_path),
-                    "-ss", "0",
-                    "-vframes", "1",
-                    "-q:v", "2",
-                    str(out),
-                ],
-                capture_output=True,
-                timeout=15,
-            )
-            if result.returncode == 0 and out.exists() and out.stat().st_size > 0:
-                return out
-            out.unlink(missing_ok=True)
-            return None
-        except Exception:
-            return None
 
     def register_voice(self, path: Path) -> int:
         """Register a voice file and return its play index."""
@@ -192,25 +172,28 @@ class ConsoleUI:
         return True
 
     def render_voice(self, path: Path, caption: str | None = None) -> None:
-        """Draw voice message as:  ►3 ▁▂▃▅▇▅▃▂…  0:04"""
+        """Draw voice message as:  ►3 ▁▂▃▅▇▅▃▂…  0:04
+
+        Hint is embedded in the line (►N). Use /play N or click the input area.
+        No extra dim line — rich.Console.print races with prompt_toolkit and
+        scatters "click / /play" across the screen.
+        """
         if not path.exists():
             print_formatted_text(HTML("         [voice] (file missing)"))
             return
         idx = self.register_voice(path)
         v = self.get_voice(idx)
         assert v is not None
-        line = format_voice_line(v["waveform"], v["duration"], index=idx)
-        # cyan play button + dim waveform
+        # Single line only — must use print_formatted_text (not rich) so order
+        # stays correct under patch_stdout.
         print_formatted_text(HTML(
             f"         <ansigreen>►</ansigreen><ansicyan>{idx}</ansicyan> "
             f"<ansiyellow>{v['waveform']}</ansiyellow>  "
             f"<ansigray>{v['duration']}</ansigray>"
+            f"  <ansigray>/play {idx}</ansigray>"
         ))
         if caption:
             print_formatted_text(HTML(f"         {caption}"))
-        self.console.print(
-            f"[dim]         click / /play {idx} — воспроизвести[/dim]"
-        )
 
     def media(
         self,
@@ -221,33 +204,30 @@ class ConsoleUI:
         """
         Display media in the terminal.
         - photo / image: half-block pixel art
-        - video: first-frame thumbnail
         - voice / audio: ASCII waveform with play index
+        - anything else: compact text label (no broken pixel dump)
         """
         if media_type in ("voice", "audio") and path.exists():
             self.render_voice(path, caption=caption)
             return
 
-        label = f"[{media_type}] {path.name}"
         shown = False
 
         if media_type in ("photo", "image") and path.exists():
             shown = self._render_image(path)
-        elif media_type == "video" and path.exists():
-            frame = self._extract_video_frame(path)
-            if frame is not None:
-                try:
-                    shown = self._render_image(frame)
-                finally:
-                    frame.unlink(missing_ok=True)
 
         if not shown:
+            # Unsupported / missing / failed render — one clean line
+            if media_type == "video":
+                label = "[video] (не поддерживается)"
+            elif path and path.exists():
+                label = f"[{media_type}] {path.name}"
+            else:
+                label = f"[{media_type or 'media'}]"
             print_formatted_text(HTML(f"         {label}"))
-            if caption:
-                print_formatted_text(HTML(f"         {caption}"))
-        else:
-            if caption:
-                print_formatted_text(HTML(f"         {caption}"))
+
+        if caption:
+            print_formatted_text(HTML(f"         {caption}"))
 
     def recording_status(self, waveform: str, elapsed: float) -> None:
         """Overwrite current line with live recording indicator."""
@@ -366,7 +346,6 @@ class ConsoleUI:
 
       /msg <user> <text>
       /photo <path> [caption]
-      /video <path> [caption]
       /audio <path> [caption]
       /voice              — запись голосового (повторно — стоп и отправка)
       /play [n]           — воспроизвести голосовое (последнее или №n)

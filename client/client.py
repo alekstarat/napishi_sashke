@@ -147,20 +147,35 @@ class MessengerClient:
             client=self,
         )
 
-        while True:
+        try:
+            while True:
 
-            raw = await self.websocket.recv()
+                raw = await self.websocket.recv()
 
-            data = json.loads(raw)
+                data = json.loads(raw)
 
-            packet = parse_packet(
-                data
-            )
+                packet = parse_packet(
+                    data
+                )
 
-            await self.dispatcher.dispatch(
-                ctx,
-                packet,
-            )
+                await self.dispatcher.dispatch(
+                    ctx,
+                    packet,
+                )
+        except websockets.exceptions.ConnectionClosed as exc:
+            code = getattr(exc, "code", None)
+            reason = (getattr(exc, "reason", None) or "") or ""
+            if not self._authenticated.is_set():
+                msg = "Авторизация не удалась"
+                if reason:
+                    msg = f"{msg}: {reason}"
+                elif code:
+                    msg = f"{msg} (code {code})"
+                self.ui.error(msg)
+            else:
+                self.ui.disconnected()
+            # Unblock sender waiting on auth
+            self._authenticated.set()
 
     def _line_to_packet(
         self,
@@ -694,7 +709,19 @@ class MessengerClient:
 
         with patch_stdout(raw=True):
 
-            await asyncio.gather(
+            results = await asyncio.gather(
                 self.receiver(),
                 self.sender(),
+                return_exceptions=True,
             )
+            for r in results:
+                if isinstance(r, BaseException) and not isinstance(
+                    r,
+                    (
+                        asyncio.CancelledError,
+                        websockets.exceptions.ConnectionClosed,
+                    ),
+                ):
+                    # Don't re-raise quiet disconnects after auth failure
+                    if isinstance(r, Exception):
+                        raise r
