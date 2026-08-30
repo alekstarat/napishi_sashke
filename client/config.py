@@ -1,5 +1,5 @@
 SERVER_URL = (
-    "ws://localhost:8000/ws"
+    "ws://127.0.0.1:8000/napishi_sashke"
 )
 
 TOKEN = None

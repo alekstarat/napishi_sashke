@@ -93,7 +93,7 @@ class MessengerClient:
                 "https://",
             )
             .removesuffix(
-                "/ws"
+                "/napishi_sashke"
             )
         )
 
