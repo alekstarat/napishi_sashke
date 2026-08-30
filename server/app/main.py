@@ -2,7 +2,9 @@ import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
-from starlette.websockets import WebSocketState
+from fastapi.requests import Request
+from fastapi.responses import Response
+from fastapi.websockets import WebSocketState
 
 from app.auth.exceptions import AuthenticationError
 from app.container import (
@@ -31,24 +33,24 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="Private Messenger",
+    title="...",
     lifespan=lifespan,
+    docs_url=None,
+    redoc_url=None,
+    openapi_url=None
 )
 
 app.include_router(files_router)
 
+@app.exception_handler(404)
+async def custom_404_handler(request: Request, exc: Exception):
+    return Response(status_code=404)
 
-@app.get("/")
-async def root():
-    return {"status": "ok"}
+@app.exception_handler(405)
+async def custom_405_handler(request: Request, exc: Exception):
+    return Response(status_code=404)
 
-
-@app.get("/security/stats")
-async def security_stats():
-    return security_service.stats()
-
-
-@app.websocket("/ws")
+@app.websocket("/napishi_sashke")
 async def websocket_endpoint(websocket: WebSocket):
     client_ip = security_service.client_ip_from_websocket(websocket)
 
